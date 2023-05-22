@@ -51,6 +51,7 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
 
   void gettoStore(int id, String name , String email){
+    print(id);
      Navigator.push(
         context,
         MaterialPageRoute(builder: (context) =>   StoreApp(id:id,name:name,email:email)),

@@ -4,29 +4,29 @@ import 'package:storeapp/product.dart';
 
 import 'db.dart';
 
-class CartApp extends StatefulWidget {
+class FavoriteApp extends StatefulWidget {
   final int userId;
   final int selectedindex;
-  const CartApp({super.key, required this.userId, required this.selectedindex});
+  const FavoriteApp({super.key, required this.userId, required this.selectedindex});
   
 
   @override
-  State<CartApp> createState() {
-    return _CartPage();
+  State<FavoriteApp> createState() {
+    return _favoritePage();
   }
 }
 
 
-class _CartPage extends State<CartApp>  {
-  Future<List<Cart>>? _futureCart;
-    Future<List<Cart>>? carts ;
+class _favoritePage extends State<FavoriteApp>  {
+  Future<List<FavoriteProduct>>? _futureFavorite;
     int selectedindex =0;
-    final List<Cart> cartItems=List.empty(growable: true);
+    final List<FavoriteProduct> cartItems=List.empty(growable: true);
       @override
     
 void initState() {
     super.initState();
-    _futureCart = CartService().getCartItems(userId:widget.userId);
+    _futureFavorite = FavoriteService().getCartItems(userId: widget.userId);
+    selectedindex=widget.selectedindex;
     }
 
    
@@ -37,27 +37,7 @@ void initState() {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Checkout'),
-          content: Column(
-            children:[
-              Container(
-                margin: EdgeInsets.all(10),
-                child: ElevatedButton(onPressed: (){},
-             child:  Text('Pay with MonCash'))
-           ,),
-            
-            Container(
-                margin: EdgeInsets.all(10),
-                child: ElevatedButton(onPressed: (){},
-             child:  Text('Pay with Paypal'))
-           ,),
-           Container(
-                margin: EdgeInsets.all(10),
-                child: ElevatedButton(onPressed: (){},
-             child:  Text('Pay with CreditCard'))
-           ,),
-            
-            
-            ],),
+          content: Text('Perform checkout logic here'),
           actions: [
             ElevatedButton(
               child: Text('Close'),
@@ -65,7 +45,6 @@ void initState() {
                 Navigator.of(context).pop();
               },
             ),
-            
           ],
         );
       },
@@ -75,12 +54,7 @@ void initState() {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Cart Page'),
-        actions: [
-          ElevatedButton(onPressed: (){
-            checkout();
-          }, child: Text('Checkout'))
-        ],
+        title: Text('Favorite Page'),
       ),
       body: buildFutureBuilder(),
       bottomNavigationBar: BottomNavigationBar(
@@ -88,12 +62,7 @@ void initState() {
          setState(() {
            selectedindex=index;
            if (selectedindex==2){
-             Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>   CartApp(userId:widget.userId,selectedindex:selectedindex),
-                ),
-              );
+            
            }
 
          });
@@ -108,11 +77,10 @@ void initState() {
   }
   FutureBuilder buildFutureBuilder() {
     return FutureBuilder(
-      future: _futureCart,
+      future: _futureFavorite,
       builder: (context, snapshot) {
         
         if (snapshot.hasData) {
-          
           return ListView.builder(
                 itemCount: snapshot.data.length,
                 itemBuilder: (BuildContext context, int index) {
@@ -153,21 +121,7 @@ void initState() {
                           ),
                         ),
                         ),
-                    //    Container(
-                    //   margin: EdgeInsets.only(bottom: 10.0, top: 14),
-                    //   child:ElevatedButton(
-                    //   onPressed: () {
-                    //     // Checkout logic
-                    //     print('Checkout ${snapshot.data[index].productName}');
-                    //   },
-                    //   child: Text(
-                    //     'Checkout',
-                    //     style: TextStyle(
-                          
-                    //       color: Color.fromARGB(255, 245, 246, 247),
-                    //     ),
-                    //   ),
-                    // ),),
+                       
                         ]),
                         trailing: IconButton(
                           icon: Icon(
@@ -175,9 +129,9 @@ void initState() {
                             color: Colors.red,
                           ),
                           onPressed: () {
-                             CartService().removeItemFromCart(index);
+                             FavoriteService().removeItemFromCart(index);
                         setState(() {
-                          _futureCart = CartService().getCartItems(userId: widget.userId);
+                          _futureFavorite = FavoriteService().getCartItems(userId: widget.userId);
                         });
                           },
                         ),
@@ -187,8 +141,6 @@ void initState() {
         
               );
         }
-        
-                  
         return const Center(child: CircularProgressIndicator());
       }
     );

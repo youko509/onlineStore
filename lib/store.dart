@@ -1,11 +1,11 @@
 import 'dart:convert';
-import 'dart:ffi';
-import 'package:flutter/rendering.dart';
+
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:storeapp/cart.dart';
 import 'package:storeapp/db.dart';
 import 'package:storeapp/login.dart';
+import 'favorite.dart';
 
 class Product {
   final int id;
@@ -45,10 +45,11 @@ class Categorie {
 
 
 class StoreApp extends StatefulWidget {
-  const StoreApp({super.key, required this.id, required this.name, required this.email});
+  const StoreApp({super.key,required this.id, String name='', String email=''});
   final int id;
-  final String name;
-  final String email;
+  
+  final String name='';
+  final String email='';
 
   @override
   State<StoreApp> createState() {
@@ -88,6 +89,7 @@ void initState() {
     // synchronous call if you don't care about the result
     () async {
         _futureCategorie = getCategorie();
+        print(widget.id);
     }();
     // anonymous function if you want the result
 }
@@ -97,6 +99,18 @@ void initState() {
     return Scaffold(
       appBar: AppBar(
         title: Text('Store'),
+        actions: [
+          ElevatedButton(onPressed: (){
+            if (widget.id !=0){
+             Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>   CartApp(userId:widget.id,selectedindex:selectedindex),
+                ),
+              );
+          }
+          }, child: Text('Payment'))
+        ],
       ),
       drawer:  Drawer(
           
@@ -108,7 +122,7 @@ void initState() {
                 ),
               ListTile(title:const Text("Account"), onTap: (){},),
               ListTile(title:const Text("FAQ"), onTap: (){},),
-              ListTile(title:const Text("Logout"), onTap: (){
+              ListTile(title:widget.id==0 ? const Text("Login"):const Text("Logout"), onTap: (){
                  Navigator.push(
                                   context,
                                   MaterialPageRoute(builder: (context) =>const  LoginApp())
@@ -122,9 +136,9 @@ void initState() {
            selectedindex=index;
          });
         },
-        currentIndex: selectedindex,
+        currentIndex: 1,
         items: [
-        BottomNavigationBarItem(label: "Peson",icon:  Icon(Icons.person)),
+        BottomNavigationBarItem(label: "Favorite",icon:  Icon(Icons.favorite)),
         BottomNavigationBarItem(label: "Home",icon: Icon(Icons.home)),
         BottomNavigationBarItem(label: "Cart",icon: Icon(Icons.add_shopping_cart))
       ]),
@@ -140,58 +154,76 @@ void initState() {
       builder: (context, snapshot) {
         
         if (snapshot.hasData) {
-          
           return ListView.builder(
-                itemCount: snapshot.data.length - 14,
+                itemCount: snapshot.data.length ,
                 itemBuilder: (BuildContext context, int index) {
-                  return Row(
-                   
-                    children: [SizedBox(
-                      child: Row(
-                        children: [
-                        Image.network('${snapshot.data[index].image}', height: 80,  
-                        width: 80  ),
-                        
-                        Text(
-                          '${snapshot.data[index].title}',
-                        
-                          style: const TextStyle(fontSize: 12.0, color: Color.fromARGB(255, 9, 9, 9)),
-                          maxLines: 2,
-                        ),
-                        Container(
-                          padding:const EdgeInsets.only(left: 30.0),
-                          child: ElevatedButton(
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(builder: (context) => ProductsApp(id:snapshot.data[index].id, title: snapshot.data[index].title,)),
-                                );
-                              }, 
-                              child: const Text("Read Me")),
-                        )
-                        ],
-                      ),
-                    )]
-                    
+                  return Container(
+                            margin: EdgeInsets.all(16.0),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8.0),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.3),
+                                  spreadRadius: 2,
+                                  blurRadius: 4,
+                                  offset: Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8.0),
+                              child: Column(
+                                children: [
+                                  Image.network(
+                                    '${snapshot.data[index].image}',
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: 150.0,
+                                  ),
+                                  Container(
+                                    padding: EdgeInsets.all(16.0),
+                                    color: Colors.white,
+                                    child: TextButton(
+                                      onPressed: () {
+                                       Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => ProductsApp(userId:widget.id,id:snapshot.data[index].id, title: snapshot.data[index].title,)),
+                                        );
+                                      },
+                                      child: Text(
+                                        '${snapshot.data[index].title}',
+                                         style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16.0,
+                                      ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                     );
-                  
-                }
-       );
-        } else if (snapshot.hasError) {
+        
+        }else if (snapshot.hasError) {
           return Text('${snapshot.error}');
         }
 
         return const Center(child: CircularProgressIndicator());
-      },
+      }
     );
   }
 
-}
+  }
+
+
 //  maria@mail.com
 
 class ProductsApp extends StatefulWidget {
-  const ProductsApp({super.key, required this.id, required this.title});
+  const ProductsApp({super.key, required this.id, required this.title,this.userId});
   final int id;
+  final int? userId;
   final String title;
  @override
   State<ProductsApp> createState(){
@@ -204,7 +236,7 @@ class _ProductListPage extends State<ProductsApp> {
   int selectedindex=0;
   Future<List<Product>>? _futureProduct;
   List<Product> productList=List.empty(growable: true);
-
+  IconData icon = Icons.favorite_border ;
   Future<List<Product>> getproducts({required int id}) async {
     
       final List l;
@@ -234,6 +266,7 @@ void initState() {
     // synchronous call if you don't care about the result
     () async {
         _futureProduct = getproducts(id:widget.id);
+       
     }();
     // anonymous function if you want the result
 }
@@ -245,6 +278,16 @@ void initState() {
     return Scaffold(
       appBar: AppBar(
         title: Text('Lis Pwodwi pou ${widget.title}'),
+        actions: [
+          ElevatedButton(onPressed: (){
+             Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>   CartApp(userId:widget.userId!,selectedindex:selectedindex),
+                ),
+              );
+          }, child: Text('Payment'))
+        ],
       ),
       bottomNavigationBar:BottomNavigationBar(
         onTap: (index){
@@ -252,18 +295,25 @@ void initState() {
            selectedindex=index;
            if (selectedindex==2){
              Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>  const CartApp(),
-                            ),
-                          );
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>  CartApp(userId:widget.userId!,selectedindex:selectedindex),
+                ),
+              );
            }
-
+          if (selectedindex==0){
+             Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>   FavoriteApp(userId:widget.userId!,selectedindex:selectedindex),
+                ),
+              );
+          }
          });
         },
         currentIndex: selectedindex,
         items: [
-        BottomNavigationBarItem(label: "Peson",icon:  Icon(Icons.person)),
+        BottomNavigationBarItem(label: "Favorite",icon:  Icon(Icons.favorite)),
         BottomNavigationBarItem(label: "Home",icon: Icon(Icons.home)),
         BottomNavigationBarItem(label: "Cart",icon: Icon(Icons.add_shopping_cart))
       ]),
@@ -280,31 +330,81 @@ void initState() {
           return ListView.builder(
                 itemCount: snapshot.data.length,
                 itemBuilder: (BuildContext context, int index) {
-                  return GridTile(
-                    child:Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                  return Container(
+                    
+                    width: 60,
+              margin: EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.3),
+                    spreadRadius: 2,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                 Image.network('${snapshot.data[index].image}'),
-                  Text('${snapshot.data[index].name}'),
-                  Text('${snapshot.data[index].description}'),
-                  Text('\$${snapshot.data[index].price.toStringAsFixed(2)}'),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      IconButton(
+                  Container(
+                    height: 200.0,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(8.0),
+                      ),
+                      image: DecorationImage(
+                        image: NetworkImage(snapshot.data[index].image),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                         children:[IconButton(
                         icon: Icon(Icons.add_shopping_cart),
                         onPressed: () {
-                         insertCart(Cart(userId: 1,productId: snapshot.data[index].id,productName:snapshot.data[index].name,isPaid: false));
+                          if (widget.userId!=0){
+                             CartService().addItemToCart(Cart(userId: widget.userId!,productId: snapshot.data[index].id,productName:snapshot.data[index].name,price: snapshot.data[index].price,paid: 'Unpaid',quantity: 0).toMap());
+                         print("add");
+                          }
+                         
                         },
                       ),
                       IconButton(
-                        icon: Icon(Icons.favorite),
+                        icon: Icon(icon),
                         onPressed: () {
-                          // Ajoute nan lis favori
+                        
+                             FavoriteService().addItemToCart(FavoriteProduct(userId: widget.userId!,productId: snapshot.data[index].id,productName:snapshot.data[index].name,price: snapshot.data[index].price,).toMap());
+                         print("add");
+                          
                         },
-                      ),
-                      Column(
-                      children: [ElevatedButton(onPressed: () {
+                      ),]),
+                        Text(
+                         snapshot.data[index].name,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16.0,
+                          ),
+                        ),
+                        SizedBox(height: 8.0),
+                        Text(
+                          '\$${snapshot.data[index].price.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 14.0,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        Container(
+                          margin: EdgeInsets.only(top: 10),
+                        child: ElevatedButton(onPressed: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
@@ -312,14 +412,15 @@ void initState() {
                             ),
                           );
                         }, 
-                        child: Text("See More")),]
-                  )
-                    ],
+                        child: Text("See More")),),
+                      ],
+                    ),
                   ),
                 ],
               ),
-                );
-              }
+            );
+          },
+              
        );
         } else if (snapshot.hasError) {
           return Text('${snapshot.error}');

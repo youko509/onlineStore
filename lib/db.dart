@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:hive/hive.dart';
@@ -7,14 +9,17 @@ class FavoriteProduct {
   final int id =0;
   final int userId;
   final int productId;
-
-  FavoriteProduct({id,required this.userId, required this.productId});
+  final int price;
+  final String productName;
+  FavoriteProduct({id,required this.userId, required this.productId, required this.price, required this.productName});
 
   Map<String, dynamic> toMap() {
   return {
   'id': id,
   'userId': userId,
   'productId': productId,
+  'price':price,
+  'productName':productName,
   };
   }
 factory FavoriteProduct.fromJson(Map<String, dynamic> json) {
@@ -22,6 +27,8 @@ factory FavoriteProduct.fromJson(Map<String, dynamic> json) {
       id:json['id'],
       userId: json['userId'],
       productId: json['productId'],
+      productName:json['productName'],
+      price: json['price'],
     );
 
 }
@@ -62,16 +69,23 @@ class Cart {
 
 
 class CartService {
-  static const String _cartBoxName = 'box';
+  static const String _cartBoxName = 'box4';
   List<Cart> cartList=List.empty(growable: true);
   Future<void> addItemToCart(Map<String, dynamic> item) async {
     final box =  Hive.box(_cartBoxName);
     box.add(item);
   }
 
-  Future<List<Cart>> getCartItems() async {
+  Future<List<Cart>> getCartItems({required int userId}) async {
     final box =  Hive.box(_cartBoxName);
-    box.values.toList().forEach((el) {cartList.add(Cart.fromJson(el)); });
+
+    for (var el in box.values.toList()) {
+      if (el['userId']==userId){
+       
+       cartList.add((Cart(userId:el['userId'],productId: el['productId'],price: el['price'],productName: el['productName'],paid: el['paid'],quantity: el['quantity'] )));
+
+      }
+    }
     return cartList;
   }
 
@@ -81,17 +95,21 @@ class CartService {
   }
 }
 
-class FavoriteSerivice {
-  static const String _cartBoxName = 'fav';
+class FavoriteService {
+  static const String _cartBoxName = 'fav4';
   List<FavoriteProduct> cartList=List.empty(growable: true);
   Future<void> addItemToCart(Map<String, dynamic> item) async {
     final box =  Hive.box(_cartBoxName);
     box.add(item);
   }
 
-  Future<List<FavoriteProduct>> getCartItems() async {
+  Future<List<FavoriteProduct>> getCartItems({required int userId}) async {
     final box =  Hive.box(_cartBoxName);
-    box.values.toList().forEach((el) {cartList.add(FavoriteProduct.fromJson(el)); });
+    box.values.toList().forEach((el) {
+      if (el['userId']==userId){
+      cartList.add(FavoriteProduct(price: el['price'],productId: el['productId'],userId: el['userId'],productName: el['productName'])); 
+        }
+  });
     return cartList;
   }
 
