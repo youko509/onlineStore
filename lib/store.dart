@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ffi';
 
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
@@ -90,6 +91,11 @@ class _HomePage extends State<StoreApp>  {
   Future<List<Categorie>>? _futureCategorie;
   List<Categorie> categorieList=List.empty(growable: true);
   int selectedindex=0;
+  Future<List<Product>>? _futureProduct;
+  List<Product> productList=List.empty(growable: true);
+  IconData icon = Icons.favorite_border;
+  bool cartbool=false;
+  bool favbool=false;
   Future<List<Categorie>> getCategorie() async {
     
       final List l;
@@ -112,9 +118,7 @@ class _HomePage extends State<StoreApp>  {
         throw Exception('Failed to get Categories.');
       }
   }
-  Future<List<Product>>? _futureProduct;
-  List<Product> productList=List.empty(growable: true);
-  IconData icon = Icons.favorite_border ;
+  
   Future<List<Product>> getproducts() async {
     
       final List l;
@@ -155,14 +159,14 @@ void initState() {
         title: Text('Store'),
         actions: [
           ElevatedButton(onPressed: (){
-            if (widget.id ==0){
+            
              Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (context) => widget.id==0  ? const LoginApp(): CartApp(userId:widget.id,selectedindex:selectedindex),
                 ),
               );
-          }
+          
           }, child: Text('Payment'))
         ],
       ),
@@ -172,9 +176,14 @@ void initState() {
             children: [
               const DrawerHeader(
                 decoration: BoxDecoration(color: Colors.blue),
-                child:  Text("MyApp"),
+                child:  Text("Store App"),
                 ),
-              
+              ListTile(title:Text("Lis pwodwi"), onTap: (){
+                 Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) =>const  LoginApp())
+                                );
+                },),
               ListTile(title:widget.id==0 ? const Text("Login"):const Text("Logout"), onTap: (){
                  Navigator.push(
                                   context,
@@ -219,7 +228,7 @@ void initState() {
         BottomNavigationBarItem(label: "Home",icon: Icon(Icons.home)),
         BottomNavigationBarItem(label: "Cart",icon: Icon(Icons.add_shopping_cart))
       ]),
-      body: Column(children: <Widget>[Expanded(child: buildFutureBuilder()),Expanded(child: buildBuilder()) ],) 
+      body: Row(children: <Widget>[Expanded(flex:4,child: buildFutureBuilder()),Expanded(flex:7,child: buildBuilder()) ],) 
       
       
     );
@@ -234,43 +243,39 @@ void initState() {
                 itemCount: snapshot.data.length ,
                 itemBuilder: (BuildContext context, int index) {
                   return Container(
+                    
                             margin: EdgeInsets.all(16.0),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(8.0),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.grey.withOpacity(0.3),
-                                  spreadRadius: 2,
-                                  blurRadius: 4,
-                                  offset: Offset(0, 2),
-                                ),
-                              ],
+                              // boxShadow: [
+                              //   BoxShadow(
+                              //     color: Colors.grey.withOpacity(0.3),
+                              //     spreadRadius: 2,
+                              //     blurRadius: 4,
+                              //     offset: Offset(0, 2),
+                              //   ),
+                              // ],
                             ),
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(8.0),
                               child: Column(
                                 children: [
-                                  Image.network(
-                                    '${snapshot.data[index].image}',
-                                    fit: BoxFit.cover,
-                                    width: double.infinity,
-                                    height: 150.0,
-                                  ),
+                                 
                                   Container(
-                                    padding: EdgeInsets.all(16.0),
+                                    padding: EdgeInsets.all(2.0),
                                     color: Colors.white,
                                     child: TextButton(
                                       onPressed: () {
                                        Navigator.push(
                                           context,
-                                          MaterialPageRoute(builder: (context) => ProductsApp(userId:widget.id,id:snapshot.data[index].id, title: snapshot.data[index].name,)),
+                                          MaterialPageRoute(builder: (context) => ProductsApp(userId:widget.id,id:snapshot.data[index].id, title: snapshot.data[index].title,)),
                                         );
                                       },
                                       child: Text(
                                         '${snapshot.data[index].title}',
                                          style: TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 16.0,
+                                        fontSize: 12.0,
                                       ),
                                       ),
                                     ),
@@ -292,6 +297,7 @@ void initState() {
   }
 
   FutureBuilder buildBuilder() {
+    IconData iconshop2 = Icons.add_shopping_cart_rounded;
     return FutureBuilder(
       future: _futureProduct,
       builder: (context, snapshot) {
@@ -299,7 +305,7 @@ void initState() {
         if (snapshot.hasData) {
           
           return ListView.builder(
-                itemCount: snapshot.data.length,
+                itemCount: 6,
                 itemBuilder: (BuildContext context, int index) {
                   return Container(
                     
@@ -320,6 +326,7 @@ void initState() {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  
                   Container(
                     height: 200.0,
                     decoration: BoxDecoration(
@@ -340,10 +347,24 @@ void initState() {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.start,
                          children:[IconButton(
-                        icon: Icon(Icons.add_shopping_cart),
+                        icon:Icon(iconshop2),
                         onPressed: () {
+                          
                           if (widget.id!=0){
-                             CartService().addItemToCart(Cart(userId: widget.id,productId: snapshot.data[index].id,productName:snapshot.data[index].name,price: snapshot.data[index].price,paid: 'Unpaid',quantity: 0).toMap());
+                            setState(() {
+                            cartbool=!cartbool;
+                            
+                            if (cartbool==true){
+                              
+                               CartService().addItemToCart(Cart(userId: widget.id,productId: snapshot.data[index].id,productName:snapshot.data[index].name,price: snapshot.data[index].price,paid: 'Unpaid',quantity: 0).toMap());
+                            }else{
+                            
+                              
+                              CartService().removeItemFromCart(index);
+                            }
+                          });
+                            
+                            
                          print("add");
                           }else{
                             info(context, "You have to login to add Cart");
@@ -352,7 +373,7 @@ void initState() {
                         },
                       ),
                       IconButton(
-                        icon: Icon(icon),
+                        icon: Icon(Icons.favorite_outline),
                         onPressed: () {
                           if (widget.id!=0){
                              FavoriteService().addItemToCart(FavoriteProduct(userId: widget.id,productId: snapshot.data[index].id,productName:snapshot.data[index].name,price: snapshot.data[index].price,).toMap());
@@ -397,6 +418,7 @@ void initState() {
           },
               
        );
+        
         } else if (snapshot.hasError) {
           return Text('${snapshot.error}');
         }
@@ -649,12 +671,13 @@ class ProductDetailPage extends StatelessWidget {
             SizedBox(height: 10),
             Text('\$${product.price.toStringAsFixed(2)}', style: TextStyle(fontSize: 18)),
             SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () {
-                // Ajoute nan panye
-              },
-              child: Text('Ajoute nan panye'),
-            ),
+            // ElevatedButton(
+            //   onPressed: () {
+            //     CartApp(userId:product.id,selectedindex: 0,);
+            //     // Ajoute nan panye
+            //   },
+            //   child: Text('Ajoute nan panye'),
+            // ),
           ],
         ),
       ),

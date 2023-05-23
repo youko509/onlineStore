@@ -21,6 +21,7 @@ class CartApp extends StatefulWidget {
 
 class _CartPage extends State<CartApp>  {
   Future<List<Cart>>? _futureCart;
+   int quantity=0;
     Future<List<Cart>>? carts ;
     int selectedindex =0;
     final List<Cart> cartItems=List.empty(growable: true);
@@ -28,6 +29,7 @@ class _CartPage extends State<CartApp>  {
     
 void initState() {
     super.initState();
+   
     _futureCart = CartService().getCartItems(userId:widget.userId);
     }
 
@@ -130,7 +132,7 @@ void initState() {
       builder: (context, snapshot) {
         
         if (snapshot.hasData) {
-          
+         
           return ListView.builder(
                 itemCount: snapshot.data.length,
                 itemBuilder: (BuildContext context, int index) {
