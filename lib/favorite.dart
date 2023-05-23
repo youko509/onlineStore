@@ -1,7 +1,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:storeapp/product.dart';
+import 'package:storeapp/store.dart';
 
+import 'cart.dart';
 import 'db.dart';
 
 class FavoriteApp extends StatefulWidget {
@@ -62,8 +64,29 @@ void initState() {
          setState(() {
            selectedindex=index;
            if (selectedindex==2){
-            
+             Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>  CartApp(userId:widget.userId,selectedindex:selectedindex),
+                ),
+              );
            }
+          if (selectedindex==0){
+             Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>   FavoriteApp(userId:widget.userId,selectedindex:selectedindex),
+                ),
+              );
+          }
+           if (selectedindex==1){
+             Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>   StoreApp(id: widget.userId,),
+                ),
+              );
+          }
 
          });
         },

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:storeapp/product.dart';
 
 import 'db.dart';
+import 'favorite.dart';
+import 'store.dart';
 
 class CartApp extends StatefulWidget {
   final int userId;
@@ -87,18 +89,34 @@ void initState() {
         onTap: (index){
          setState(() {
            selectedindex=index;
-           if (selectedindex==2){
+            if (selectedindex==2){
              Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>   CartApp(userId:widget.userId,selectedindex:selectedindex),
+                  builder: (context) =>  CartApp(userId:widget.userId,selectedindex:selectedindex),
                 ),
               );
            }
+          if (selectedindex==0){
+             Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>   FavoriteApp(userId:widget.userId,selectedindex:selectedindex),
+                ),
+              );
+          }
+           if (selectedindex==1){
+             Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>   StoreApp(id: widget.userId,),
+                ),
+              );
+          }
 
          });
         },
-        currentIndex: selectedindex,
+        currentIndex: 2,
         items: [
         BottomNavigationBarItem(label: "Favorite",icon:  Icon(Icons.favorite)),
         BottomNavigationBarItem(label: "Home",icon: Icon(Icons.home)),

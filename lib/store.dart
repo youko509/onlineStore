@@ -40,7 +40,36 @@ class Categorie {
 }
 
 
-
+ void info(context,message) {
+    // Perform checkout logic
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Info'),
+          content: 
+              Container(
+                margin: EdgeInsets.all(5),
+               
+             child:  Text(message)
+           ,),
+            
+           
+            
+           
+          actions: [
+            ElevatedButton(
+              child: Text('Close'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            
+          ],
+        );
+      },
+    );
+  }
 
 
 
@@ -83,12 +112,37 @@ class _HomePage extends State<StoreApp>  {
         throw Exception('Failed to get Categories.');
       }
   }
+  Future<List<Product>>? _futureProduct;
+  List<Product> productList=List.empty(growable: true);
+  IconData icon = Icons.favorite_border ;
+  Future<List<Product>> getproducts() async {
+    
+      final List l;
+      
+      final response = await http.get(
+        Uri.parse('https://api.escuelajs.co/api/v1/products'),
+      );
+      if (response.statusCode == 200) {
+        
+        l = jsonDecode(response.body);
+
+        l.forEach((el) { 
+          productList.add(Product.fromJson(el));
+          });
+        return productList;
+      } else {
+        // If the server did not return a 201 CREATED response,
+        // then throw an exception.
+        throw Exception('Failed to get Categories.');
+      }
+  }
   @override
 void initState() {
     super.initState();
     // synchronous call if you don't care about the result
     () async {
         _futureCategorie = getCategorie();
+         _futureProduct = getproducts();
         print(widget.id);
     }();
     // anonymous function if you want the result
@@ -101,11 +155,11 @@ void initState() {
         title: Text('Store'),
         actions: [
           ElevatedButton(onPressed: (){
-            if (widget.id !=0){
+            if (widget.id ==0){
              Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>   CartApp(userId:widget.id,selectedindex:selectedindex),
+                  builder: (context) => widget.id==0  ? const LoginApp(): CartApp(userId:widget.id,selectedindex:selectedindex),
                 ),
               );
           }
@@ -117,11 +171,10 @@ void initState() {
           child: ListView(
             children: [
               const DrawerHeader(
-                decoration: BoxDecoration(color: Colors.brown),
+                decoration: BoxDecoration(color: Colors.blue),
                 child:  Text("MyApp"),
                 ),
-              ListTile(title:const Text("Account"), onTap: (){},),
-              ListTile(title:const Text("FAQ"), onTap: (){},),
+              
               ListTile(title:widget.id==0 ? const Text("Login"):const Text("Logout"), onTap: (){
                  Navigator.push(
                                   context,
@@ -134,6 +187,30 @@ void initState() {
         onTap: (index){
          setState(() {
            selectedindex=index;
+           if (selectedindex==2){
+             Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>  CartApp(userId:widget.id,selectedindex:selectedindex),
+                ),
+              );
+           }
+          if (selectedindex==0){
+             Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>   FavoriteApp(userId:widget.id,selectedindex:selectedindex),
+                ),
+              );
+          }
+           if (selectedindex==1){
+             Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) =>   StoreApp(id: widget.id,),
+                ),
+              );
+          }
          });
         },
         currentIndex: 1,
@@ -142,9 +219,8 @@ void initState() {
         BottomNavigationBarItem(label: "Home",icon: Icon(Icons.home)),
         BottomNavigationBarItem(label: "Cart",icon: Icon(Icons.add_shopping_cart))
       ]),
-      body: Container(
-        child:buildFutureBuilder(),
-      ),
+      body: Column(children: <Widget>[Expanded(child: buildFutureBuilder()),Expanded(child: buildBuilder()) ],) 
+      
       
     );
   }
@@ -187,7 +263,7 @@ void initState() {
                                       onPressed: () {
                                        Navigator.push(
                                           context,
-                                          MaterialPageRoute(builder: (context) => ProductsApp(userId:widget.id,id:snapshot.data[index].id, title: snapshot.data[index].title,)),
+                                          MaterialPageRoute(builder: (context) => ProductsApp(userId:widget.id,id:snapshot.data[index].id, title: snapshot.data[index].name,)),
                                         );
                                       },
                                       child: Text(
@@ -215,8 +291,121 @@ void initState() {
     );
   }
 
-  }
+  FutureBuilder buildBuilder() {
+    return FutureBuilder(
+      future: _futureProduct,
+      builder: (context, snapshot) {
+        
+        if (snapshot.hasData) {
+          
+          return ListView.builder(
+                itemCount: snapshot.data.length,
+                itemBuilder: (BuildContext context, int index) {
+                  return Container(
+                    
+                    width: 60,
+              margin: EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(8.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.3),
+                    spreadRadius: 2,
+                    blurRadius: 4,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    height: 200.0,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(8.0),
+                      ),
+                      image: DecorationImage(
+                        image: NetworkImage(snapshot.data[index].image),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                         children:[IconButton(
+                        icon: Icon(Icons.add_shopping_cart),
+                        onPressed: () {
+                          if (widget.id!=0){
+                             CartService().addItemToCart(Cart(userId: widget.id,productId: snapshot.data[index].id,productName:snapshot.data[index].name,price: snapshot.data[index].price,paid: 'Unpaid',quantity: 0).toMap());
+                         print("add");
+                          }else{
+                            info(context, "You have to login to add Cart");
+                          }
+                         
+                        },
+                      ),
+                      IconButton(
+                        icon: Icon(icon),
+                        onPressed: () {
+                          if (widget.id!=0){
+                             FavoriteService().addItemToCart(FavoriteProduct(userId: widget.id,productId: snapshot.data[index].id,productName:snapshot.data[index].name,price: snapshot.data[index].price,).toMap());
+                         print("add");
+                          }else{
+                            info(context, "You have to login to add Favorite");
+                          }
+                        },
+                      ),]),
+                        Text(
+                         snapshot.data[index].name,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16.0,
+                          ),
+                        ),
+                        SizedBox(height: 8.0),
+                        Text(
+                          '\$${snapshot.data[index].price.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontSize: 14.0,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        Container(
+                          margin: EdgeInsets.only(top: 10),
+                        child: ElevatedButton(onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>  ProductDetailPage(product: Product(id: snapshot.data[index].id,name:snapshot.data[index].name,price: snapshot.data[index].price,description: snapshot.data[index].description,image: snapshot.data[index].image)),
+                            ),
+                          );
+                        }, 
+                        child: Text("See More")),),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+              
+       );
+        } else if (snapshot.hasError) {
+          return Text('${snapshot.error}');
+        }
 
+        return const Center(child: CircularProgressIndicator());
+      },
+    );
+  }
+}
 
 //  maria@mail.com
 
@@ -283,7 +472,7 @@ void initState() {
              Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>   CartApp(userId:widget.userId!,selectedindex:selectedindex),
+                  builder: (context) => widget.userId==0  ? const LoginApp():CartApp(userId:widget.userId!,selectedindex:selectedindex) ,
                 ),
               );
           }, child: Text('Payment'))
@@ -374,6 +563,8 @@ void initState() {
                           if (widget.userId!=0){
                              CartService().addItemToCart(Cart(userId: widget.userId!,productId: snapshot.data[index].id,productName:snapshot.data[index].name,price: snapshot.data[index].price,paid: 'Unpaid',quantity: 0).toMap());
                          print("add");
+                          }else{
+                            info(context, "You have to login to add Cart");
                           }
                          
                         },
@@ -381,9 +572,12 @@ void initState() {
                       IconButton(
                         icon: Icon(icon),
                         onPressed: () {
-                        
+                         if (widget.userId!=0){
                              FavoriteService().addItemToCart(FavoriteProduct(userId: widget.userId!,productId: snapshot.data[index].id,productName:snapshot.data[index].name,price: snapshot.data[index].price,).toMap());
                          print("add");
+                         }else{
+                          info(context, "You have to login to add Favorite");
+                         }
                           
                         },
                       ),]),
